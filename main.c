@@ -44,6 +44,9 @@ int main(int argc, char *argv[]){
 
         SDL_WaitEvent(&event);
 
+
+        //TODO: Something
+
         switch (event.type) {
             case SDL_QUIT:
                 quit = true;
