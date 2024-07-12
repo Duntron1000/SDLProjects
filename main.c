@@ -1,15 +1,14 @@
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 #include "src/include/SDL2/SDL.h"
 #include "src/include/SDL2/SDL_events.h"
 #include "src/include/SDL2/SDL_render.h"
 #include "src/include/SDL2/SDL_video.h"
+#include "src/include/linkedList.h"
 
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 320 
+#define HEIGHT 200
+
 
 int main(int argc, char *argv[]){
 
@@ -17,66 +16,78 @@ int main(int argc, char *argv[]){
     bool leftMouseButtonDown = false;
     SDL_Event event;
 
+    int x1 = 0;
+    int y1 = 0;
+    int x2 = 0;
+    int y2 = 0;
+    bool drawing = false;
+
+    linkedList *lines = newList();
+
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_Window *window = SDL_CreateWindow("Pixel Drawing",
-            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, 0);
+    SDL_Window *window = SDL_CreateWindow("Line Drawing",
+            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640 * 2, 480 * 2, 0);
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
 
-    SDL_Texture * texture = SDL_CreateTexture(renderer,
-            SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
-
-    uint32_t *pixels;
-    pixels = (uint32_t*)malloc(WIDTH * HEIGHT * sizeof(uint32_t));
-
-    if (pixels == NULL) {
-        printf("Error allocating pixels");
-        return -1;
-    }
-    
-    /* make the pixels all white */
-    memset(pixels, 255, WIDTH * HEIGHT * sizeof(Uint32));
+    SDL_RenderSetLogicalSize(renderer, WIDTH, HEIGHT);
 
     while (!quit) {
-        /* send the pixle array to update the texture */
-        SDL_UpdateTexture(texture, NULL, pixels, WIDTH * sizeof(uint32_t));
 
         SDL_WaitEvent(&event);
 
-
-        //TODO: Something
 
         switch (event.type) {
             case SDL_QUIT:
                 quit = true;
                 break;
-            case SDL_MOUSEBUTTONUP:
-                if (event.button.button == SDL_BUTTON_LEFT)
-                    leftMouseButtonDown = false;
-                break;
             case SDL_MOUSEBUTTONDOWN:
-                if (event.button.button == SDL_BUTTON_LEFT)
-                    leftMouseButtonDown = true;
+                switch (event.button.button) {
+                    case SDL_BUTTON_LEFT:
+                        x1 = event.motion.x;
+                        y1 = event.motion.y;
+                        x2 = event.motion.x;
+                        y2 = event.motion.y;
+                        drawing = true;
+                        break;
+                }
+                break;
+            case SDL_MOUSEBUTTONUP:
+                switch (event.button.button) {
+                    case SDL_BUTTON_LEFT:
+                        drawing = false;
+                        Line line = {x1, y1, x2, y2};
+                        addFirstNode(lines, line);
+                        break;
+                }
+                break;
             case SDL_MOUSEMOTION:
-                if (leftMouseButtonDown) {
-                    int mousex = event.motion.x;
-                    int mousey = event.motion.y;
-
-                    pixels[mousey * WIDTH + mousex] = 0;
+                if (drawing) {
+                    x2 = event.motion.x;
+                    y2 = event.motion.y;
                 }
                 break;
         }
 
-
-
+        SDL_SetRenderDrawColor(renderer, 242,  242,  242, 255);
         SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
+
+        SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
+        if (drawing)
+            SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+
+        node *cursor = lines->head;
+        for (int i = 0; i < lines->len; i++) {
+            Line line = cursor->value;
+            SDL_RenderDrawLine(renderer, line.x1, line.y1, line.x2, line.y2);
+            cursor = cursor->next;
+        }
+
+
         SDL_RenderPresent(renderer);
     }
 
-    free(pixels);
-    SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
