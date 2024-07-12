@@ -51,14 +51,24 @@ int main(int argc, char *argv[]){
                         y2 = event.motion.y;
                         drawing = true;
                         break;
+                    case SDL_BUTTON_RIGHT:
+                        printList(lines, printLine);
+                        break;
+
+
                 }
                 break;
             case SDL_MOUSEBUTTONUP:
                 switch (event.button.button) {
                     case SDL_BUTTON_LEFT:
                         drawing = false;
-                        Line line = {x1, y1, x2, y2};
-                        addFirstNode(lines, line);
+                        Line *line = (Line *)malloc(sizeof(Line));
+                        line->x1 = x1;
+                        line->y1 = y1;
+                        line->x2 = x2;
+                        line->y2 = y2;
+
+                        pushFirst(lines, (void *)line);
                         break;
                 }
                 break;
@@ -74,20 +84,23 @@ int main(int argc, char *argv[]){
         SDL_RenderClear(renderer);
 
         SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
+
         if (drawing)
             SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
 
         node *cursor = lines->head;
         for (int i = 0; i < lines->len; i++) {
-            Line line = cursor->value;
-            SDL_RenderDrawLine(renderer, line.x1, line.y1, line.x2, line.y2);
+            Line *line = (struct Line *)cursor->value;
+            SDL_RenderDrawLine(renderer, line->x1, line->y1, line->x2, line->y2);
             cursor = cursor->next;
+
         }
 
 
         SDL_RenderPresent(renderer);
     }
 
+    linkedListDel(lines);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

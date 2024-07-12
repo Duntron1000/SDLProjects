@@ -10,7 +10,7 @@ typedef struct Line {
 } Line;
 
 typedef struct node {
-    Line value;
+    void *value;
     struct node* next;
     struct node* last;
 } node;
@@ -22,46 +22,46 @@ typedef struct linkedList {
 } linkedList;
 
 linkedList* newList() {
-    linkedList* list = (linkedList*)malloc(sizeof(linkedList));
+    linkedList* list = (struct linkedList*)malloc(sizeof(linkedList));
     list->head = NULL;
     list->tail = NULL;
     list->len = 0;
     return list;
 }
 
-node* newNode(Line v) {
-    node* newNode = (node*)malloc(sizeof(node));
+node* newNode(void *newData) {
+    node* newNode = (struct node*)malloc(sizeof(struct node));
     newNode->next = NULL;
     newNode->last = NULL;
-    newNode->value = v;
+    newNode->value = newData;
     return newNode;
 }
 
-void addFirstNode(linkedList* l, Line value) {
+void pushFirst(linkedList* l, void *value) {
     node* n = newNode(value);
     if (l->head == NULL) {
         l->head = n;
         l->tail = n;
+    } else {
+        n->next = l->head;
+        l->head->last = n;
+        l->head = n;
     }
-    n->next = l->head;
-    l->head->last = n;
-    l->head = n;
     l->len++;
 }
 
-void printList(linkedList* l) {
+void printList(linkedList* l, void (*fptr)(void *)) {
     node* cursor = l->head;
     for (int i = 0; i < l->len; i++){
-        Line line = cursor->value;
-        printf("{%d, %d, %d, %d}<->", line.x1, line.y1, line.x2, line.y2);
+        (*fptr)(cursor->value);
         cursor = cursor->next;
     }
     puts("\n");
 }
 
-Line listPopFirst(linkedList* l) {
+void* listPopFirst(linkedList* l) {
     assert(l->head != NULL);
-    Line ret = l->head->value;
+    void *ret = l->head->value;
     l->head->next->last = NULL;
     node * newHead = l->head->next;
     free(l->head);
@@ -70,9 +70,9 @@ Line listPopFirst(linkedList* l) {
     return ret;
 }
 
-Line listPopLast(linkedList* l) {
+void* listPopLast(linkedList* l) {
     assert(l->tail != NULL);
-    Line ret = l->tail->value;
+    void *ret = l->tail->value;
     l->tail->last->next = NULL;
     node * newTail = l->tail->last;
     free(l->tail);
@@ -89,4 +89,9 @@ void linkedListDel(linkedList* l) {
         cursor = temp;
     }
     free(l);
+}
+
+void printLine(void *value) {
+    Line *line = (struct Line *)value;
+    printf("{%d, %d, %d, %d}->", (int)line->x1, (int)line->y1, (int)line->x2, (int)line->y2);
 }
